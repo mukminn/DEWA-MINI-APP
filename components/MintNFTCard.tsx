@@ -217,7 +217,7 @@ export function MintNFTCard() {
         }
       }
 
-      // Use the working method
+      // Use the working method - ensure fee is correctly applied
       const txConfig: any = {
         address: nftAddress as `0x${string}`,
         abi: ERC721_ABI,
@@ -226,9 +226,20 @@ export function MintNFTCard() {
         chainId: base.id,
       };
 
+      // Apply value if method uses ETH value for fee
       if (workingMethod.value && workingMethod.value > 0n) {
         txConfig.value = workingMethod.value;
       }
+
+      // Debug logging
+      console.log('Executing mint with config:', {
+        functionName: workingMethod.func,
+        args: workingMethod.args,
+        value: workingMethod.value ? formatEther(workingMethod.value) : '0',
+        feeToUse: feeToUse ? formatEther(feeToUse) : '0',
+        useManualFee,
+        manualFee,
+      });
 
       writeContract(txConfig);
       
