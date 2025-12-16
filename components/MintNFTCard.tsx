@@ -5,14 +5,12 @@ import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagm
 import { isAddress } from 'viem';
 import { ERC721_ABI } from '@/lib/contracts';
 import { GlowCard } from './GlowCard';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 
 export function MintNFTCard() {
   const { address } = useAccount();
   const [nftAddress, setNftAddress] = useState('');
-  const [tokenURI, setTokenURI] = useState('');
-  const [preview, setPreview] = useState('');
 
   const { writeContract, data: hash, isPending } = useWriteContract();
 
@@ -31,27 +29,16 @@ export function MintNFTCard() {
       return;
     }
 
-    if (!tokenURI) {
-      toast.error('Token URI is required');
-      return;
-    }
-
     try {
       writeContract({
         address: nftAddress as `0x${string}`,
         abi: ERC721_ABI,
         functionName: 'safeMint',
-        args: [address, tokenURI],
+        args: [address],
       });
       toast.success('NFT mint transaction sent!');
     } catch (error: any) {
       toast.error(error.message || 'Mint failed');
-    }
-  };
-
-  const loadPreview = () => {
-    if (tokenURI) {
-      setPreview(tokenURI);
     }
   };
 
@@ -62,7 +49,10 @@ export function MintNFTCard() {
         animate={{ opacity: 1, y: 0 }}
         className="h-full flex flex-col"
       >
-        <h2 className="text-2xl font-bold text-glow-orange mb-4">Mint NFT</h2>
+        <div className="mb-4">
+          <p className="text-xs font-semibold text-glow-orange mb-2 uppercase tracking-wider">only owner</p>
+          <h2 className="text-2xl font-bold text-glow-orange">Mint NFT</h2>
+        </div>
         
         <div className="space-y-4 flex-1">
           <div>
@@ -76,46 +66,6 @@ export function MintNFTCard() {
             />
           </div>
 
-          <div>
-            <label className="block text-sm text-gray-400 mb-2">Token URI</label>
-            <input
-              type="text"
-              value={tokenURI}
-              onChange={(e) => setTokenURI(e.target.value)}
-              placeholder="ipfs://... or https://..."
-              className="w-full px-4 py-3 bg-black/40 border border-white/20 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-glow-orange focus:glow-orange transition-all"
-            />
-          </div>
-
-          <button
-            onClick={loadPreview}
-            className="w-full py-2 bg-black/40 border border-white/20 rounded-xl text-white hover:border-glow-orange transition-all text-sm"
-          >
-            Load Preview
-          </button>
-
-          <AnimatePresence>
-            {preview && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden rounded-xl"
-              >
-                <div className="aspect-square bg-black/40 border border-white/20 rounded-xl overflow-hidden">
-                  {preview.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                    <img src={preview} alt="NFT Preview" className="w-full h-full object-cover" />
-                  ) : preview.match(/\.(mp4|webm|mov)$/i) ? (
-                    <video src={preview} className="w-full h-full object-cover" autoPlay loop muted />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400">
-                      Preview not available
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
 
         <motion.button
