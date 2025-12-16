@@ -12,7 +12,7 @@ import { motion } from 'framer-motion';
 export default function Home() {
   return (
     <MiniAppWrapper>
-      <div className="min-h-screen relative">
+      <div className="min-h-screen relative bg-black">
         <ThreeBackground />
         
         <WalletButton />
@@ -23,10 +23,16 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-12"
           >
-            <h1 className="text-6xl md:text-8xl font-bold mb-4 gradient-animated bg-clip-text text-transparent">
+            <h1 className="text-6xl md:text-8xl font-bold mb-4" style={{
+              background: 'linear-gradient(-45deg, #00d4ff, #ffd700, #ff6b35, #ff1744, #00d4ff)',
+              backgroundSize: '400% 400%',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}>
               DEWA Web3
             </h1>
-            <p className="text-xl text-gray-400">Futuristic DApp on Base</p>
+            <p className="text-xl" style={{ color: '#9ca3af' }}>Futuristic DApp on Base</p>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-7xl mx-auto">

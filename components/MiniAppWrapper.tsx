@@ -26,3 +26,4 @@ export function MiniAppWrapper({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+

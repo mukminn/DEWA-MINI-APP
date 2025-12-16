@@ -50,3 +50,4 @@ next-env.d.ts
 !.eslintrc.json
 !postcss.config.js
 
+.vercel
