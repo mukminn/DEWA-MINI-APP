@@ -137,21 +137,35 @@ export function MintNFTCard() {
     }
 
     const tryMint = async () => {
-      const methodsToTry: Array<{ func: string; args: any[]; value: bigint | undefined; label: string }> = autoDetectMode 
-        ? [
-            // Try safeMint first (most common)
-            { func: 'safeMint', args: [address], value: feeToUse, label: 'safeMint(address) with ETH value' },
-            ...(feeToUse && feeToUse > 0n ? [{ func: 'safeMint', args: [address, feeToUse], value: undefined, label: 'safeMint(address, fee) with fee param' }] : []),
+      // Build list of methods to try - prioritize methods with fee if fee is provided
+      const methodsToTry: Array<{ func: string; args: any[]; value: bigint | undefined; label: string }> = [];
+      
+      if (autoDetectMode) {
+        if (feeToUse && feeToUse > 0n) {
+          // If fee is provided, try methods with fee first (most likely needed)
+          methodsToTry.push(
+            { func: 'mint', args: [address, feeToUse], value: undefined, label: 'mint(address, fee) with fee param' },
+            { func: 'safeMint', args: [address, feeToUse], value: undefined, label: 'safeMint(address, fee) with fee param' },
             { func: 'mint', args: [address], value: feeToUse, label: 'mint(address) with ETH value' },
-            ...(feeToUse && feeToUse > 0n ? [{ func: 'mint', args: [address, feeToUse], value: undefined, label: 'mint(address, fee) with fee param' }] : []),
-            { func: 'safeMint', args: [address], value: undefined, label: 'safeMint(address) without fee' },
-            { func: 'mint', args: [address], value: undefined, label: 'mint(address) without fee' },
-          ]
-        : useFeeAsParam && feeToUse && feeToUse > 0n
-        ? [{ func: mintFunction, args: [address, feeToUse], value: undefined, label: `${mintFunction}(address, fee)` }]
-        : [{ func: mintFunction, args: [address], value: feeToUse, label: `${mintFunction}(address) with ETH value` }];
+            { func: 'safeMint', args: [address], value: feeToUse, label: 'safeMint(address) with ETH value' }
+          );
+        }
+        // Also try without fee (in case fee is optional)
+        methodsToTry.push(
+          { func: 'mint', args: [address], value: undefined, label: 'mint(address) without fee' },
+          { func: 'safeMint', args: [address], value: undefined, label: 'safeMint(address) without fee' }
+        );
+      } else {
+        // Manual mode
+        if (useFeeAsParam && feeToUse && feeToUse > 0n) {
+          methodsToTry.push({ func: mintFunction, args: [address, feeToUse], value: undefined, label: `${mintFunction}(address, fee)` });
+        } else {
+          methodsToTry.push({ func: mintFunction, args: [address], value: feeToUse, label: `${mintFunction}(address) with ETH value` });
+        }
+      }
 
       let workingMethod: typeof methodsToTry[0] | null = null;
+      const errors: string[] = [];
 
       // Test each method using simulateContract
       for (const method of methodsToTry) {
@@ -170,13 +184,17 @@ export function MintNFTCard() {
           break;
         } catch (simErr: any) {
           // Continue to next method if simulation fails
-          console.log(`Method ${method.label} simulation failed:`, simErr?.shortMessage || simErr?.message);
+          const errMsg = simErr?.shortMessage || simErr?.message || 'Unknown error';
+          errors.push(`${method.label}: ${errMsg}`);
+          console.log(`Method ${method.label} simulation failed:`, errMsg);
           continue;
         }
       }
 
       if (!workingMethod) {
-        throw new Error('No valid mint method found. Check contract requirements.');
+        console.error('All methods failed:', errors);
+        const triedMethods = methodsToTry.map(m => m.label).join(', ');
+        throw new Error(`No valid mint method found. Tried: ${triedMethods}. Errors in console. Check contract requirements or try manual mode with different settings.`);
       }
 
       // Use the working method
