@@ -17,6 +17,7 @@ export function MintNFTCard() {
   const [useManualFee, setUseManualFee] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [mintFunction, setMintFunction] = useState<'safeMint' | 'mint'>('safeMint');
+  const [useFeeAsParam, setUseFeeAsParam] = useState(false);
   const [contractInfo, setContractInfo] = useState<{
     mintFee?: bigint;
     fee?: bigint;
@@ -138,13 +139,19 @@ export function MintNFTCard() {
         address: nftAddress as `0x${string}`,
         abi: ERC721_ABI,
         functionName: mintFunction,
-        args: [address],
         chainId: base.id,
       };
 
-      // Only add value if fee is provided
-      if (feeToUse && feeToUse > 0n) {
-        txConfig.value = feeToUse;
+      // Determine arguments and value based on contract signature
+      if (useFeeAsParam && feeToUse && feeToUse > 0n) {
+        // If contract accepts fee as parameter
+        txConfig.args = [address, feeToUse];
+      } else {
+        // If contract accepts fee as value (ETH)
+        txConfig.args = [address];
+        if (feeToUse && feeToUse > 0n) {
+          txConfig.value = feeToUse;
+        }
       }
 
       writeContract(txConfig);
