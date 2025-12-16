@@ -19,8 +19,8 @@ export function MintNFTCard() {
   const isValidAddress = nftAddress && isAddress(nftAddress);
   const contractAddress = isValidAddress ? (nftAddress as `0x${string}`) : undefined;
 
-  // Try to read mintFee
-  const { data: feeData, isError: feeError } = useReadContract({
+  // Try to read various fee functions (try all in parallel, use first one that succeeds)
+  const { data: feeData } = useReadContract({
     address: contractAddress,
     abi: ERC721_ABI,
     functionName: 'mintFee',
@@ -31,43 +31,41 @@ export function MintNFTCard() {
     },
   });
 
-  // Try to read fee if mintFee fails
-  const { data: feeData2, isError: feeError2 } = useReadContract({
+  const { data: feeData2 } = useReadContract({
     address: contractAddress,
     abi: ERC721_ABI,
     functionName: 'fee',
     chainId: base.id,
     query: {
-      enabled: !!contractAddress && feeError,
+      enabled: !!contractAddress,
       retry: false,
     },
   });
 
-  // Try to read mintPrice if fee fails
-  const { data: priceData, isError: priceError } = useReadContract({
+  const { data: priceData } = useReadContract({
     address: contractAddress,
     abi: ERC721_ABI,
     functionName: 'mintPrice',
     chainId: base.id,
     query: {
-      enabled: !!contractAddress && feeError && feeError2,
+      enabled: !!contractAddress,
       retry: false,
     },
   });
 
-  // Try to read publicMintPrice if mintPrice fails
   const { data: publicPriceData } = useReadContract({
     address: contractAddress,
     abi: ERC721_ABI,
     functionName: 'publicMintPrice',
     chainId: base.id,
     query: {
-      enabled: !!contractAddress && feeError && feeError2 && priceError,
+      enabled: !!contractAddress,
       retry: false,
     },
   });
 
   useEffect(() => {
+    // Use the first fee that exists (priority: mintFee > fee > mintPrice > publicMintPrice)
     const fee = feeData || feeData2 || priceData || publicPriceData;
     setMintFee(fee as bigint | null);
   }, [feeData, feeData2, priceData, publicPriceData]);
