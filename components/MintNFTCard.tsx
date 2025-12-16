@@ -127,13 +127,24 @@ export function MintNFTCard() {
       return;
     }
 
-    // Validate manual fee if enabled
+    // Calculate fee to use INSIDE handleMint to ensure we use the latest state
+    let calculatedFee: bigint | undefined;
     if (useManualFee && manualFee) {
       const feeAmount = parseFloat(manualFee);
       if (isNaN(feeAmount) || feeAmount < 0) {
         toast.error('Invalid fee amount');
         return;
       }
+      if (feeAmount > 0) {
+        try {
+          calculatedFee = parseEther(manualFee);
+        } catch (e) {
+          toast.error('Invalid fee format');
+          return;
+        }
+      }
+    } else if (mintFee && mintFee > 0n) {
+      calculatedFee = mintFee;
     }
 
     const tryMint = async () => {
@@ -278,7 +289,7 @@ export function MintNFTCard() {
       
       if (autoDetectMode) {
         setDetectedMethod(workingMethod.label);
-        const feeDisplay = feeToUse && feeToUse > 0n ? ` (Fee: ${formatEther(feeToUse)} ETH)` : '';
+        const feeDisplay = calculatedFee && calculatedFee > 0n ? ` (Fee: ${formatEther(calculatedFee)} ETH)` : '';
         if (workingMethod.label.includes('fallback')) {
           toast.success(`Using fallback method: ${workingMethod.label}${feeDisplay}`, { duration: 5000 });
         } else {
