@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import { isAddress } from 'viem';
+import { useState, useEffect } from 'react';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
+import { isAddress, formatEther } from 'viem';
 import { base } from 'wagmi/chains';
 import { ERC721_ABI } from '@/lib/contracts';
 import { GlowCard } from './GlowCard';
@@ -12,8 +12,65 @@ import toast from 'react-hot-toast';
 export function MintNFTCard() {
   const { address } = useAccount();
   const [nftAddress, setNftAddress] = useState('');
+  const [mintFee, setMintFee] = useState<bigint | null>(null);
 
   const { writeContract, data: hash, isPending } = useWriteContract();
+
+  const isValidAddress = nftAddress && isAddress(nftAddress);
+  const contractAddress = isValidAddress ? (nftAddress as `0x${string}`) : undefined;
+
+  // Try to read mintFee
+  const { data: feeData, isError: feeError } = useReadContract({
+    address: contractAddress,
+    abi: ERC721_ABI,
+    functionName: 'mintFee',
+    chainId: base.id,
+    query: {
+      enabled: !!contractAddress,
+      retry: false,
+    },
+  });
+
+  // Try to read fee if mintFee fails
+  const { data: feeData2, isError: feeError2 } = useReadContract({
+    address: contractAddress,
+    abi: ERC721_ABI,
+    functionName: 'fee',
+    chainId: base.id,
+    query: {
+      enabled: !!contractAddress && feeError,
+      retry: false,
+    },
+  });
+
+  // Try to read mintPrice if fee fails
+  const { data: priceData, isError: priceError } = useReadContract({
+    address: contractAddress,
+    abi: ERC721_ABI,
+    functionName: 'mintPrice',
+    chainId: base.id,
+    query: {
+      enabled: !!contractAddress && feeError && feeError2,
+      retry: false,
+    },
+  });
+
+  // Try to read publicMintPrice if mintPrice fails
+  const { data: publicPriceData } = useReadContract({
+    address: contractAddress,
+    abi: ERC721_ABI,
+    functionName: 'publicMintPrice',
+    chainId: base.id,
+    query: {
+      enabled: !!contractAddress && feeError && feeError2 && priceError,
+      retry: false,
+    },
+  });
+
+  useEffect(() => {
+    const fee = feeData || feeData2 || priceData || publicPriceData;
+    setMintFee(fee as bigint | null);
+  }, [feeData, feeData2, priceData, publicPriceData]);
 
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
@@ -37,6 +94,7 @@ export function MintNFTCard() {
         functionName: 'safeMint',
         args: [address, ''],
         chainId: base.id,
+        value: mintFee || undefined,
       });
       toast.success('NFT mint transaction sent!');
     } catch (error: any) {
@@ -68,6 +126,20 @@ export function MintNFTCard() {
             />
           </div>
 
+          {mintFee !== null && mintFee > 0n && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="bg-black/40 border border-glow-orange/50 rounded-xl p-4"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-400">Mint Fee:</span>
+                <span className="text-lg font-bold text-glow-orange">
+                  {formatEther(mintFee)} ETH
+                </span>
+              </div>
+            </motion.div>
+          )}
         </div>
 
         <motion.button
