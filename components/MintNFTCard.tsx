@@ -166,8 +166,10 @@ export function MintNFTCard() {
 
       let workingMethod: typeof methodsToTry[0] | null = null;
       const errors: string[] = [];
+      let simulationWorked = false;
 
-      // Test each method using simulateContract
+      // Test each method using simulateContract (skip if simulation always fails due to on-chain conditions)
+      // Note: We'll still try to simulate but if all fail, we proceed with most likely method
       for (const method of methodsToTry) {
         try {
           await publicClient.simulateContract({
@@ -181,26 +183,37 @@ export function MintNFTCard() {
           
           // If simulation succeeds, use this method
           workingMethod = method;
+          simulationWorked = true;
           break;
         } catch (simErr: any) {
           // Continue to next method if simulation fails
           const errMsg = simErr?.shortMessage || simErr?.message || 'Unknown error';
           errors.push(`${method.label}: ${errMsg}`);
           console.log(`Method ${method.label} simulation failed:`, errMsg);
+          
+          // If error is about permission/execution, simulation might fail but transaction could work
+          // So we still track this as potential working method if it's the first/likely one
+          if (!workingMethod && (errMsg.includes('execution reverted') || errMsg.includes('revert'))) {
+            // This might work on actual execution, so we keep it as potential
+            workingMethod = method;
+          }
           continue;
         }
       }
 
-      // If no method passed simulation, try direct write with most likely method (fallback)
-      if (!workingMethod) {
-        console.warn('All methods failed simulation, trying direct write with most likely method');
+      // If no method passed simulation completely, use the first method with fee (if fee provided) or first method
+      if (!simulationWorked) {
+        console.warn('Simulation failed for all methods, will try direct execution with most likely method');
+        console.log('Simulation errors:', errors);
         
-        // If fee is provided, try mint(address, fee) first as it's most common for contracts with fee
+        // Prioritize method with fee as parameter if fee is provided (most common pattern)
         if (feeToUse && feeToUse > 0n) {
-          workingMethod = { func: 'mint', args: [address, feeToUse], value: undefined, label: 'mint(address, fee) with fee param (fallback)' };
+          // Try mint(address, fee) first as it's the most common pattern for contracts with fee
+          workingMethod = methodsToTry.find(m => m.func === 'mint' && m.args.length === 2 && m.args[1] === feeToUse) 
+            || { func: 'mint', args: [address, feeToUse], value: undefined, label: 'mint(address, fee) with fee param (direct exec)' };
         } else {
-          // Fallback to simple mint without fee
-          workingMethod = { func: 'mint', args: [address], value: undefined, label: 'mint(address) without fee (fallback)' };
+          // Use first method from list
+          workingMethod = methodsToTry[0] || { func: 'mint', args: [address], value: undefined, label: 'mint(address) without fee (direct exec)' };
         }
       }
 
