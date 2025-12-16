@@ -151,39 +151,57 @@ export function MintNFTCard() {
         ? [{ func: mintFunction, args: [address, feeToUse], value: undefined, label: `${mintFunction}(address, fee)` }]
         : [{ func: mintFunction, args: [address], value: feeToUse, label: `${mintFunction}(address) with ETH value` }];
 
+      let workingMethod: typeof methodsToTry[0] | null = null;
+
+      // Test each method using simulateContract
       for (const method of methodsToTry) {
-        
         try {
-          const txConfig: any = {
+          await publicClient.simulateContract({
             address: nftAddress as `0x${string}`,
             abi: ERC721_ABI,
-            functionName: method.func,
-            args: method.args,
-            chainId: base.id,
-          };
-
-          if (method.value && method.value > 0n) {
-            txConfig.value = method.value;
-          }
-
-          // Try to write contract
-          writeContract(txConfig);
+            functionName: method.func as any,
+            args: method.args as any,
+            value: method.value,
+            account: address,
+          });
           
-          if (autoDetectMode) {
-            setDetectedMethod(method.label);
-            toast.success(`Using: ${method.label}`);
-          }
-          
-          return; // Success, exit function
-        } catch (err: any) {
-          // Continue to next method if this one fails
-          console.log(`Method ${method.label} failed:`, err);
+          // If simulation succeeds, use this method
+          workingMethod = method;
+          break;
+        } catch (simErr: any) {
+          // Continue to next method if simulation fails
+          console.log(`Method ${method.label} simulation failed:`, simErr?.shortMessage || simErr?.message);
           continue;
         }
       }
+
+      if (!workingMethod) {
+        throw new Error('No valid mint method found. Check contract requirements.');
+      }
+
+      // Use the working method
+      const txConfig: any = {
+        address: nftAddress as `0x${string}`,
+        abi: ERC721_ABI,
+        functionName: workingMethod.func,
+        args: workingMethod.args,
+        chainId: base.id,
+      };
+
+      if (workingMethod.value && workingMethod.value > 0n) {
+        txConfig.value = workingMethod.value;
+      }
+
+      writeContract(txConfig);
       
-      // If all methods failed
-      throw new Error('All mint methods failed. Check contract requirements.');
+      if (autoDetectMode) {
+        setDetectedMethod(workingMethod.label);
+        const feeDisplay = feeToUse && feeToUse > 0n ? ` (Fee: ${formatEther(feeToUse)} ETH)` : '';
+        toast.success(`Using: ${workingMethod.label}${feeDisplay}`);
+      } else {
+        const feeDisplay = feeToUse && feeToUse > 0n ? ` (Fee: ${formatEther(feeToUse)} ETH)` : '';
+        toast.success(`NFT mint transaction sent!${feeDisplay}`);
+      }
     };
 
     try {
