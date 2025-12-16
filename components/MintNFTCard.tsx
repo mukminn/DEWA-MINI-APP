@@ -133,25 +133,39 @@ export function MintNFTCard() {
     }
 
     try {
-      // Use selected mint function with address only (no tokenURI)
-      writeContract({
+      // Prepare transaction
+      const txConfig: any = {
         address: nftAddress as `0x${string}`,
         abi: ERC721_ABI,
         functionName: mintFunction,
         args: [address],
         chainId: base.id,
-        value: feeToUse,
-      });
+      };
+
+      // Only add value if fee is provided
+      if (feeToUse && feeToUse > 0n) {
+        txConfig.value = feeToUse;
+      }
+
+      writeContract(txConfig);
       
-      const feeDisplay = feeToUse 
+      const feeDisplay = feeToUse && feeToUse > 0n
         ? ` (Fee: ${formatEther(feeToUse)} ETH)`
         : '';
       toast.success(`NFT mint transaction sent!${feeDisplay}`);
     } catch (error: any) {
-      // Better error handling
+      // Extract error message
       let errorMsg = 'Mint failed';
       
-      if (error?.shortMessage) {
+      // Try to get detailed error message
+      const errorString = JSON.stringify(error, null, 2);
+      console.error('Full error:', error);
+      
+      if (error?.cause?.reason) {
+        errorMsg = error.cause.reason;
+      } else if (error?.cause?.message) {
+        errorMsg = error.cause.message;
+      } else if (error?.shortMessage) {
         errorMsg = error.shortMessage;
       } else if (error?.message) {
         errorMsg = error.message;
@@ -159,13 +173,15 @@ export function MintNFTCard() {
         errorMsg = error;
       }
       
-      // Show more specific error messages
-      if (errorMsg.includes('reverted') || errorMsg.includes('#1002')) {
-        errorMsg = `Contract rejected transaction. Try switching to "${mintFunction === 'safeMint' ? 'mint' : 'safeMint'}" function or check contract requirements.`;
+      // Show specific guidance for common errors
+      if (errorMsg.includes('#1002') || errorMsg.includes('1002')) {
+        errorMsg = `Error #1002: Contract rejected. Pastikan Anda adalah owner atau cek requirements contract. Fee: ${feeToUse ? formatEther(feeToUse) : '0'} ETH`;
+      } else if (errorMsg.includes('reverted')) {
+        errorMsg = `Transaction reverted. Coba ubah mint function atau pastikan fee sesuai dengan contract requirement.`;
       }
       
-      toast.error(errorMsg);
-      console.error('Mint error:', error);
+      toast.error(errorMsg, { duration: 5000 });
+      console.error('Mint error details:', error);
     }
   };
 
