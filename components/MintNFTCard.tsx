@@ -13,6 +13,8 @@ export function MintNFTCard() {
   const { address } = useAccount();
   const [nftAddress, setNftAddress] = useState('');
   const [mintFee, setMintFee] = useState<bigint | null>(null);
+  const [manualFee, setManualFee] = useState('');
+  const [useManualFee, setUseManualFee] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [contractInfo, setContractInfo] = useState<{
     mintFee?: bigint;
@@ -102,13 +104,26 @@ export function MintNFTCard() {
     }
 
     try {
+      // Use manual fee if provided, otherwise use detected fee
+      let feeValue: bigint | undefined;
+      if (useManualFee && manualFee) {
+        const feeAmount = parseFloat(manualFee);
+        if (feeAmount < 0) {
+          toast.error('Fee cannot be negative');
+          return;
+        }
+        feeValue = parseEther(manualFee);
+      } else if (mintFee) {
+        feeValue = mintFee;
+      }
+
       writeContract({
         address: nftAddress as `0x${string}`,
         abi: ERC721_ABI,
         functionName: 'safeMint',
         args: [address, ''],
         chainId: base.id,
-        value: mintFee || undefined,
+        value: feeValue,
       });
       toast.success('NFT mint transaction sent!');
     } catch (error: any) {
@@ -211,30 +226,86 @@ export function MintNFTCard() {
                   </div>
                 )}
 
-                {mintFee !== null && mintFee > 0n && (
-                  <div className="pt-3 border-t border-white/10">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold text-gray-300">Selected Fee:</span>
-                      <span className="text-lg font-bold text-glow-orange">
-                        {formatEther(mintFee)} ETH
-                      </span>
-                    </div>
+                <div className="pt-3 border-t border-white/10">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-gray-300">Fee to Use:</span>
+                    <span className="text-lg font-bold text-glow-orange">
+                      {useManualFee && manualFee
+                        ? `${parseFloat(manualFee).toFixed(6)} ETH (Manual)`
+                        : mintFee !== null && mintFee > 0n
+                        ? `${formatEther(mintFee)} ETH (Auto)`
+                        : '0 ETH'}
+                    </span>
                   </div>
-                )}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {!showDetails && mintFee !== null && mintFee > 0n && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="useManualFee"
+                checked={useManualFee}
+                onChange={(e) => {
+                  setUseManualFee(e.target.checked);
+                  if (!e.target.checked) {
+                    setManualFee('');
+                  }
+                }}
+                className="w-4 h-4 rounded border-white/20 bg-black/40 text-glow-orange focus:ring-glow-orange focus:ring-2"
+              />
+              <label htmlFor="useManualFee" className="text-sm text-gray-400 cursor-pointer">
+                Use Manual Fee
+              </label>
+            </div>
+            
+            {useManualFee && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="overflow-hidden"
+              >
+                <label className="block text-sm text-gray-400 mb-2">Manual Fee (ETH)</label>
+                <input
+                  type="number"
+                  value={manualFee}
+                  onChange={(e) => setManualFee(e.target.value)}
+                  placeholder="0.0"
+                  min="0"
+                  step="0.000000000000000001"
+                  className="w-full px-4 py-3 bg-black/40 border border-glow-orange/50 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-glow-orange focus:glow-orange transition-all"
+                />
+              </motion.div>
+            )}
+          </div>
+
+          {!showDetails && !useManualFee && mintFee !== null && mintFee > 0n && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               className="bg-black/40 border border-glow-orange/50 rounded-xl p-4"
             >
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-400">Mint Fee:</span>
+                <span className="text-sm text-gray-400">Mint Fee (Auto-detected):</span>
                 <span className="text-lg font-bold text-glow-orange">
                   {formatEther(mintFee)} ETH
+                </span>
+              </div>
+            </motion.div>
+          )}
+
+          {useManualFee && manualFee && parseFloat(manualFee) > 0 && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-black/40 border border-glow-orange rounded-xl p-4"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-400">Mint Fee (Manual):</span>
+                <span className="text-lg font-bold text-glow-orange">
+                  {parseFloat(manualFee).toFixed(6)} ETH
                 </span>
               </div>
             </motion.div>
