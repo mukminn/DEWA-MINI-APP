@@ -21,8 +21,6 @@
     "wagmi": "^2.5.0",
     "viem": "^2.0.0",
     "@tanstack/react-query": "^5.28.0",
-    "@walletconnect/modal": "^2.8.1",
-    "@walletconnect/ethereum-provider": "^1.15.0",
     "zustand": "^4.5.0",
     "react-hot-toast": "^2.4.1"
   },
