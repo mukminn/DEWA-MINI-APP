@@ -187,12 +187,10 @@ export function MintNFTCard() {
     };
 
     try {
+      if (!publicClient) {
+        throw new Error('Public client not available');
+      }
       await tryMint();
-      
-      const feeDisplay = feeToUse && feeToUse > 0n
-        ? ` (Fee: ${formatEther(feeToUse)} ETH)`
-        : '';
-      toast.success(`NFT mint transaction sent!${feeDisplay}`);
     } catch (error: any) {
       // Extract error message
       let errorMsg = 'Mint failed';
