@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, usePublicClient } from 'wagmi';
 import { isAddress, formatEther, parseEther } from 'viem';
 import { base } from 'wagmi/chains';
 import { ERC721_ABI } from '@/lib/contracts';
@@ -28,6 +28,7 @@ export function MintNFTCard() {
   }>({});
 
   const { writeContract, data: hash, isPending } = useWriteContract();
+  const publicClient = usePublicClient();
 
   const isValidAddress = nftAddress && isAddress(nftAddress);
   const contractAddress = isValidAddress ? (nftAddress as `0x${string}`) : undefined;
