@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther, formatEther, isAddress } from 'viem';
+import { base } from 'wagmi/chains';
 import { ERC20_ABI } from '@/lib/contracts';
 import { GlowCard } from './GlowCard';
 import { motion } from 'framer-motion';
@@ -48,6 +49,7 @@ export function SendTokenCard() {
         abi: ERC20_ABI,
         functionName: 'transfer',
         args: [receiverAddress as `0x${string}`, amountWei],
+        chainId: base.id,
       });
       toast.success('Transaction sent!');
     } catch (error: any) {

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther, isAddress } from 'viem';
+import { base } from 'wagmi/chains';
 import { ERC20_ABI } from '@/lib/contracts';
 import { GlowCard } from './GlowCard';
 import { motion } from 'framer-motion';
@@ -42,6 +43,7 @@ export function BurnTokenCard() {
         abi: ERC20_ABI,
         functionName: 'burn',
         args: [amountWei],
+        chainId: base.id,
       });
       toast.success('Burn transaction sent!');
     } catch (error: any) {

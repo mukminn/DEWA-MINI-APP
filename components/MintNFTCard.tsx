@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { isAddress } from 'viem';
+import { base } from 'wagmi/chains';
 import { ERC721_ABI } from '@/lib/contracts';
 import { GlowCard } from './GlowCard';
 import { motion } from 'framer-motion';
@@ -35,6 +36,7 @@ export function MintNFTCard() {
         abi: ERC721_ABI,
         functionName: 'safeMint',
         args: [address, ''],
+        chainId: base.id,
       });
       toast.success('NFT mint transaction sent!');
     } catch (error: any) {

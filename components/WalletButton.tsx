@@ -1,39 +1,44 @@
 'use client';
 
-import { useAccount, useConnect, useDisconnect, useBalance, useChainId } from 'wagmi';
+import { useAccount, useConnect, useDisconnect, useBalance, useChainId, useSwitchChain } from 'wagmi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect } from 'react';
-import { switchToBase } from '@/lib/base';
+import { base } from 'wagmi/chains';
 import { formatEther } from 'viem';
 
 export function WalletButton() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, chainId: accountChainId } = useAccount();
   const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
   const chainId = useChainId();
+  const { switchChain } = useSwitchChain();
   const { data: balance } = useBalance({
     address,
+    chainId: base.id,
   });
 
   useEffect(() => {
-    if (isConnected && chainId !== 8453) {
-      const provider = window.ethereum;
-      if (provider) {
-        switchToBase(provider);
+    if (isConnected && accountChainId && accountChainId !== base.id) {
+      try {
+        switchChain({ chainId: base.id });
+      } catch (error) {
+        console.error('Failed to switch to Base chain:', error);
       }
     }
-  }, [isConnected, chainId]);
+  }, [isConnected, accountChainId, switchChain]);
 
   const shortAddress = address
     ? `${address.slice(0, 6)}...${address.slice(-4)}`
     : '';
 
-  const connectWallet = () => {
+  const connectWallet = async () => {
     const metaMaskConnector = connectors.find((c) => c.id === 'io.metamask' || c.id === 'injected');
-    if (metaMaskConnector) {
-      connect({ connector: metaMaskConnector });
-    } else if (connectors[0]) {
-      connect({ connector: connectors[0] });
+    const connector = metaMaskConnector || connectors[0];
+    if (connector) {
+      connect({ 
+        connector,
+        chainId: base.id,
+      });
     }
   };
 
