@@ -16,6 +16,7 @@ export function MintNFTCard() {
   const [manualFee, setManualFee] = useState('');
   const [useManualFee, setUseManualFee] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [mintFunction, setMintFunction] = useState<'safeMint' | 'mint'>('safeMint');
   const [contractInfo, setContractInfo] = useState<{
     mintFee?: bigint;
     fee?: bigint;
@@ -132,11 +133,12 @@ export function MintNFTCard() {
     }
 
     try {
+      // Use selected mint function with address only (no tokenURI)
       writeContract({
         address: nftAddress as `0x${string}`,
         abi: ERC721_ABI,
-        functionName: 'safeMint',
-        args: [address, ''],
+        functionName: mintFunction,
+        args: [address],
         chainId: base.id,
         value: feeToUse,
       });
@@ -146,7 +148,24 @@ export function MintNFTCard() {
         : '';
       toast.success(`NFT mint transaction sent!${feeDisplay}`);
     } catch (error: any) {
-      toast.error(error.message || 'Mint failed');
+      // Better error handling
+      let errorMsg = 'Mint failed';
+      
+      if (error?.shortMessage) {
+        errorMsg = error.shortMessage;
+      } else if (error?.message) {
+        errorMsg = error.message;
+      } else if (typeof error === 'string') {
+        errorMsg = error;
+      }
+      
+      // Show more specific error messages
+      if (errorMsg.includes('reverted') || errorMsg.includes('#1002')) {
+        errorMsg = `Contract rejected transaction. Try switching to "${mintFunction === 'safeMint' ? 'mint' : 'safeMint'}" function or check contract requirements.`;
+      }
+      
+      toast.error(errorMsg);
+      console.error('Mint error:', error);
     }
   };
 

@@ -71,6 +71,24 @@ export const ERC721_ABI = [
     type: 'function',
   },
   {
+    constant: false,
+    inputs: [
+      { name: '_to', type: 'address' },
+    ],
+    name: 'safeMint',
+    outputs: [],
+    type: 'function',
+  },
+  {
+    constant: false,
+    inputs: [
+      { name: '_to', type: 'address' },
+    ],
+    name: 'mint',
+    outputs: [],
+    type: 'function',
+  },
+  {
     constant: true,
     inputs: [{ name: '_tokenId', type: 'uint256' }],
     name: 'tokenURI',
