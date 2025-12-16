@@ -136,13 +136,13 @@ export function MintNFTCard() {
     }
 
     const tryMint = async () => {
-      const methodsToTry = autoDetectMode 
+      const methodsToTry: Array<{ func: string; args: any[]; value: bigint | undefined; label: string }> = autoDetectMode 
         ? [
             // Try safeMint first (most common)
             { func: 'safeMint', args: [address], value: feeToUse, label: 'safeMint(address) with ETH value' },
-            { func: 'safeMint', args: [address, feeToUse], value: undefined, label: 'safeMint(address, fee) with fee param', condition: feeToUse && feeToUse > 0n },
+            ...(feeToUse && feeToUse > 0n ? [{ func: 'safeMint', args: [address, feeToUse], value: undefined, label: 'safeMint(address, fee) with fee param' }] : []),
             { func: 'mint', args: [address], value: feeToUse, label: 'mint(address) with ETH value' },
-            { func: 'mint', args: [address, feeToUse], value: undefined, label: 'mint(address, fee) with fee param', condition: feeToUse && feeToUse > 0n },
+            ...(feeToUse && feeToUse > 0n ? [{ func: 'mint', args: [address, feeToUse], value: undefined, label: 'mint(address, fee) with fee param' }] : []),
             { func: 'safeMint', args: [address], value: undefined, label: 'safeMint(address) without fee' },
             { func: 'mint', args: [address], value: undefined, label: 'mint(address) without fee' },
           ]
@@ -151,8 +151,6 @@ export function MintNFTCard() {
         : [{ func: mintFunction, args: [address], value: feeToUse, label: `${mintFunction}(address) with ETH value` }];
 
       for (const method of methodsToTry) {
-        // Skip if condition not met
-        if (method.condition === false) continue;
         
         try {
           const txConfig: any = {
