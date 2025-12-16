@@ -138,27 +138,28 @@ export function MintNFTCard() {
 
     const tryMint = async () => {
       // Build list of methods to try - prioritize methods with fee if fee is provided
+      // Use calculatedFee instead of feeToUse to ensure we use the latest state
       const methodsToTry: Array<{ func: string; args: any[]; value: bigint | undefined; label: string }> = [];
       
       if (autoDetectMode) {
-        if (feeToUse && feeToUse > 0n) {
+        if (calculatedFee && calculatedFee > 0n) {
           // If fee is provided, prioritize methods with fee as parameter (most common for manual fee input)
           // For manual fee, contract usually expects fee as function parameter, not as ETH value
           if (useManualFee) {
             // Manual fee input: prioritize fee as parameter
             methodsToTry.push(
-              { func: 'mint', args: [address, feeToUse], value: undefined, label: 'mint(address, fee) with fee param' },
-              { func: 'safeMint', args: [address, feeToUse], value: undefined, label: 'safeMint(address, fee) with fee param' },
-              { func: 'mint', args: [address], value: feeToUse, label: 'mint(address) with ETH value' },
-              { func: 'safeMint', args: [address], value: feeToUse, label: 'safeMint(address) with ETH value' }
+              { func: 'mint', args: [address, calculatedFee], value: undefined, label: 'mint(address, fee) with fee param' },
+              { func: 'safeMint', args: [address, calculatedFee], value: undefined, label: 'safeMint(address, fee) with fee param' },
+              { func: 'mint', args: [address], value: calculatedFee, label: 'mint(address) with ETH value' },
+              { func: 'safeMint', args: [address], value: calculatedFee, label: 'safeMint(address) with ETH value' }
             );
           } else {
             // Auto-detected fee: try both methods equally
             methodsToTry.push(
-              { func: 'mint', args: [address, feeToUse], value: undefined, label: 'mint(address, fee) with fee param' },
-              { func: 'safeMint', args: [address, feeToUse], value: undefined, label: 'safeMint(address, fee) with fee param' },
-              { func: 'mint', args: [address], value: feeToUse, label: 'mint(address) with ETH value' },
-              { func: 'safeMint', args: [address], value: feeToUse, label: 'safeMint(address) with ETH value' }
+              { func: 'mint', args: [address, calculatedFee], value: undefined, label: 'mint(address, fee) with fee param' },
+              { func: 'safeMint', args: [address, calculatedFee], value: undefined, label: 'safeMint(address, fee) with fee param' },
+              { func: 'mint', args: [address], value: calculatedFee, label: 'mint(address) with ETH value' },
+              { func: 'safeMint', args: [address], value: calculatedFee, label: 'safeMint(address) with ETH value' }
             );
           }
         }
@@ -169,10 +170,10 @@ export function MintNFTCard() {
         );
       } else {
         // Manual mode
-        if (useFeeAsParam && feeToUse && feeToUse > 0n) {
-          methodsToTry.push({ func: mintFunction, args: [address, feeToUse], value: undefined, label: `${mintFunction}(address, fee)` });
-        } else if (feeToUse && feeToUse > 0n) {
-          methodsToTry.push({ func: mintFunction, args: [address], value: feeToUse, label: `${mintFunction}(address) with ETH value` });
+        if (useFeeAsParam && calculatedFee && calculatedFee > 0n) {
+          methodsToTry.push({ func: mintFunction, args: [address, calculatedFee], value: undefined, label: `${mintFunction}(address, fee)` });
+        } else if (calculatedFee && calculatedFee > 0n) {
+          methodsToTry.push({ func: mintFunction, args: [address], value: calculatedFee, label: `${mintFunction}(address) with ETH value` });
         } else {
           methodsToTry.push({ func: mintFunction, args: [address], value: undefined, label: `${mintFunction}(address) without fee` });
         }
@@ -221,10 +222,10 @@ export function MintNFTCard() {
         console.log('Simulation errors:', errors);
         
         // Prioritize method with fee as parameter if fee is provided (most common pattern)
-        if (feeToUse && feeToUse > 0n) {
+        if (calculatedFee && calculatedFee > 0n) {
           // Try mint(address, fee) first as it's the most common pattern for contracts with fee
-          workingMethod = methodsToTry.find(m => m.func === 'mint' && m.args.length === 2 && m.args[1] === feeToUse) 
-            || { func: 'mint', args: [address, feeToUse], value: undefined, label: 'mint(address, fee) with fee param (direct exec)' };
+          workingMethod = methodsToTry.find(m => m.func === 'mint' && m.args.length === 2 && m.args[1] === calculatedFee) 
+            || { func: 'mint', args: [address, calculatedFee], value: undefined, label: 'mint(address, fee) with fee param (direct exec)' };
         } else {
           // Use first method from list
           workingMethod = methodsToTry[0] || { func: 'mint', args: [address], value: undefined, label: 'mint(address) without fee (direct exec)' };
@@ -269,6 +270,7 @@ export function MintNFTCard() {
         value: workingMethod.value ? formatEther(workingMethod.value) + ' ETH' : '0 ETH',
         feeInArgs: workingMethod.args.length > 1 && typeof workingMethod.args[1] === 'bigint' ? formatEther(workingMethod.args[1]) + ' ETH' : 'none',
         feeAsValue: workingMethod.value ? formatEther(workingMethod.value) + ' ETH' : 'none',
+        calculatedFeeForComparison: calculatedFee ? formatEther(calculatedFee) + ' ETH' : 'none',
       });
       console.log('=== END DEBUG ===');
 
@@ -283,7 +285,7 @@ export function MintNFTCard() {
           toast.success(`Using: ${workingMethod.label}${feeDisplay}`);
         }
       } else {
-        const feeDisplay = feeToUse && feeToUse > 0n ? ` (Fee: ${formatEther(feeToUse)} ETH)` : '';
+        const feeDisplay = calculatedFee && calculatedFee > 0n ? ` (Fee: ${formatEther(calculatedFee)} ETH)` : '';
         toast.success(`NFT mint transaction sent!${feeDisplay}`);
       }
     };
@@ -315,7 +317,7 @@ export function MintNFTCard() {
       
       // Show specific guidance for common errors
       if (errorMsg.includes('#1002') || errorMsg.includes('1002')) {
-        errorMsg = `Error #1002: Contract rejected. Pastikan Anda adalah owner atau cek requirements contract. Fee: ${feeToUse ? formatEther(feeToUse) : '0'} ETH`;
+        errorMsg = `Error #1002: Contract rejected. Pastikan Anda adalah owner atau cek requirements contract. Fee: ${calculatedFee ? formatEther(calculatedFee) : '0'} ETH`;
       } else if (errorMsg.includes('reverted')) {
         errorMsg = `Transaction reverted. Coba ubah mint function atau pastikan fee sesuai dengan contract requirement.`;
       }
