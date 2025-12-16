@@ -250,15 +250,27 @@ export function MintNFTCard() {
         txConfig.value = workingMethod.value;
       }
 
-      // Debug logging
-      console.log('Executing mint with config:', {
-        functionName: workingMethod.func,
-        args: workingMethod.args,
-        value: workingMethod.value ? formatEther(workingMethod.value) : '0',
-        feeToUse: feeToUse ? formatEther(feeToUse) : '0',
+      // Debug logging - verify fee is correctly applied
+      console.log('=== MINT EXECUTION DEBUG ===');
+      console.log('Fee State:', {
         useManualFee,
         manualFee,
+        mintFee: mintFee ? formatEther(mintFee) : null,
+        feeToUse: feeToUse ? formatEther(feeToUse) : null,
       });
+      console.log('Transaction Config:', {
+        functionName: workingMethod.func,
+        args: workingMethod.args,
+        argsDetails: workingMethod.args.map((arg, idx) => ({
+          index: idx,
+          value: typeof arg === 'bigint' ? formatEther(arg) + ' ETH' : arg,
+          type: typeof arg,
+        })),
+        value: workingMethod.value ? formatEther(workingMethod.value) + ' ETH' : '0 ETH',
+        feeInArgs: workingMethod.args.length > 1 && typeof workingMethod.args[1] === 'bigint' ? formatEther(workingMethod.args[1]) + ' ETH' : 'none',
+        feeAsValue: workingMethod.value ? formatEther(workingMethod.value) + ' ETH' : 'none',
+      });
+      console.log('=== END DEBUG ===');
 
       writeContract(txConfig);
       
