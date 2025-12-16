@@ -89,15 +89,21 @@ export function BurnTokenCard() {
           className="mt-6 w-full py-4 bg-gradient-to-r from-red-500 to-orange-500 rounded-xl font-bold text-white glow-red disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
           whileHover={{ scale: isPending || isConfirming ? 1 : 1.05 }}
           whileTap={{ scale: isPending || isConfirming ? 1 : 0.95 }}
-          animate={isPending || isConfirming ? {
-            scale: [1, 0.98, 1],
-          } : {}}
-          transition={{
-            repeat: isPending || isConfirming ? Infinity : 0,
-            duration: 0.5,
-          }}
         >
-          {isPending ? 'Burning...' : isConfirming ? 'Confirming...' : 'Burn Token'}
+          <motion.div
+            className="absolute inset-0 bg-white/20"
+            animate={{
+              x: ['-100%', '100%'],
+            }}
+            transition={{
+              repeat: Infinity,
+              duration: 2,
+              ease: 'linear',
+            }}
+          />
+          <span className="relative z-10">
+            {isPending ? 'Burning...' : isConfirming ? 'Confirming...' : 'Burn Token'}
+          </span>
         </motion.button>
 
         {isSuccess && (

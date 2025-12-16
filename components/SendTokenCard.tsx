@@ -106,11 +106,24 @@ export function SendTokenCard() {
         <motion.button
           onClick={handleSend}
           disabled={isPending || isConfirming}
-          className="mt-6 w-full py-4 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl font-bold text-white glow-blue disabled:opacity-50 disabled:cursor-not-allowed"
+          className="mt-6 w-full py-4 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl font-bold text-white glow-blue disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
           whileHover={{ scale: isPending || isConfirming ? 1 : 1.05 }}
           whileTap={{ scale: isPending || isConfirming ? 1 : 0.95 }}
         >
-          {isPending ? 'Sending...' : isConfirming ? 'Confirming...' : 'Send Token'}
+          <motion.div
+            className="absolute inset-0 bg-white/20"
+            animate={{
+              x: ['-100%', '100%'],
+            }}
+            transition={{
+              repeat: Infinity,
+              duration: 2,
+              ease: 'linear',
+            }}
+          />
+          <span className="relative z-10">
+            {isPending ? 'Sending...' : isConfirming ? 'Confirming...' : 'Send Token'}
+          </span>
         </motion.button>
 
         {isSuccess && (
