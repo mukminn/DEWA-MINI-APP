@@ -136,37 +136,9 @@ export function MintNFTCard() {
               ease: 'linear',
             }}
           />
-          <AnimatePresence mode="wait">
-            {isSuccess ? (
-              <motion.span
-                key="success"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="relative z-10 absolute inset-0 flex items-center justify-center"
-              >
-                <motion.span
-                  animate={{
-                    scale: [1, 1.2, 1],
-                  }}
-                  transition={{
-                    repeat: Infinity,
-                    duration: 1,
-                  }}
-                >
-                  ✨ Minted!
-                </motion.span>
-              </motion.span>
-            ) : (
-              <motion.span
-                key="minting"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="relative z-10"
-              >
-                {isPending ? 'Minting...' : isConfirming ? 'Confirming...' : 'Mint NFT'}
-              </motion.span>
-            )}
-          </AnimatePresence>
+          <span className="relative z-10">
+            {isPending ? 'Minting...' : isConfirming ? 'Confirming...' : 'Mint NFT'}
+          </span>
         </motion.button>
 
         {isSuccess && (
