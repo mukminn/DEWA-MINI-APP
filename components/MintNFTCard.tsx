@@ -6,7 +6,7 @@ import { isAddress, formatEther } from 'viem';
 import { base } from 'wagmi/chains';
 import { ERC721_ABI } from '@/lib/contracts';
 import { GlowCard } from './GlowCard';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 
 export function MintNFTCard() {
