@@ -34,7 +34,7 @@ export function MintNFTCard() {
         address: nftAddress as `0x${string}`,
         abi: ERC721_ABI,
         functionName: 'safeMint',
-        args: [address],
+        args: [address, ''],
       });
       toast.success('NFT mint transaction sent!');
     } catch (error: any) {
