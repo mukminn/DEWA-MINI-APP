@@ -92,6 +92,25 @@ export function MintNFTCard() {
     hash,
   });
 
+  // Calculate the fee that will be used
+  const getFeeToUse = (): bigint | undefined => {
+    if (useManualFee && manualFee) {
+      const feeAmount = parseFloat(manualFee);
+      if (feeAmount > 0) {
+        try {
+          return parseEther(manualFee);
+        } catch (e) {
+          return undefined;
+        }
+      }
+    } else if (mintFee && mintFee > 0n) {
+      return mintFee;
+    }
+    return undefined;
+  };
+
+  const feeToUse = getFeeToUse();
+
   const handleMint = async () => {
     if (!address) {
       toast.error('Please connect wallet');
@@ -103,29 +122,29 @@ export function MintNFTCard() {
       return;
     }
 
-    try {
-      // Use manual fee if provided, otherwise use detected fee
-      let feeValue: bigint | undefined;
-      if (useManualFee && manualFee) {
-        const feeAmount = parseFloat(manualFee);
-        if (feeAmount < 0) {
-          toast.error('Fee cannot be negative');
-          return;
-        }
-        feeValue = parseEther(manualFee);
-      } else if (mintFee) {
-        feeValue = mintFee;
+    // Validate manual fee if enabled
+    if (useManualFee && manualFee) {
+      const feeAmount = parseFloat(manualFee);
+      if (isNaN(feeAmount) || feeAmount < 0) {
+        toast.error('Invalid fee amount');
+        return;
       }
+    }
 
+    try {
       writeContract({
         address: nftAddress as `0x${string}`,
         abi: ERC721_ABI,
         functionName: 'safeMint',
         args: [address, ''],
         chainId: base.id,
-        value: feeValue,
+        value: feeToUse,
       });
-      toast.success('NFT mint transaction sent!');
+      
+      const feeDisplay = feeToUse 
+        ? ` (Fee: ${formatEther(feeToUse)} ETH)`
+        : '';
+      toast.success(`NFT mint transaction sent!${feeDisplay}`);
     } catch (error: any) {
       toast.error(error.message || 'Mint failed');
     }
