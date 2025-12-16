@@ -18,6 +18,8 @@ export function MintNFTCard() {
   const [showDetails, setShowDetails] = useState(false);
   const [mintFunction, setMintFunction] = useState<'safeMint' | 'mint'>('safeMint');
   const [useFeeAsParam, setUseFeeAsParam] = useState(false);
+  const [autoDetectMode, setAutoDetectMode] = useState(true);
+  const [detectedMethod, setDetectedMethod] = useState<string>('');
   const [contractInfo, setContractInfo] = useState<{
     mintFee?: bigint;
     fee?: bigint;
@@ -133,28 +135,60 @@ export function MintNFTCard() {
       }
     }
 
-    try {
-      // Prepare transaction
-      const txConfig: any = {
-        address: nftAddress as `0x${string}`,
-        abi: ERC721_ABI,
-        functionName: mintFunction,
-        chainId: base.id,
-      };
+    const tryMint = async () => {
+      const methodsToTry = autoDetectMode 
+        ? [
+            // Try safeMint first (most common)
+            { func: 'safeMint', args: [address], value: feeToUse, label: 'safeMint(address) with ETH value' },
+            { func: 'safeMint', args: [address, feeToUse], value: undefined, label: 'safeMint(address, fee) with fee param', condition: feeToUse && feeToUse > 0n },
+            { func: 'mint', args: [address], value: feeToUse, label: 'mint(address) with ETH value' },
+            { func: 'mint', args: [address, feeToUse], value: undefined, label: 'mint(address, fee) with fee param', condition: feeToUse && feeToUse > 0n },
+            { func: 'safeMint', args: [address], value: undefined, label: 'safeMint(address) without fee' },
+            { func: 'mint', args: [address], value: undefined, label: 'mint(address) without fee' },
+          ]
+        : useFeeAsParam && feeToUse && feeToUse > 0n
+        ? [{ func: mintFunction, args: [address, feeToUse], value: undefined, label: `${mintFunction}(address, fee)` }]
+        : [{ func: mintFunction, args: [address], value: feeToUse, label: `${mintFunction}(address) with ETH value` }];
 
-      // Determine arguments and value based on contract signature
-      if (useFeeAsParam && feeToUse && feeToUse > 0n) {
-        // If contract accepts fee as parameter
-        txConfig.args = [address, feeToUse];
-      } else {
-        // If contract accepts fee as value (ETH)
-        txConfig.args = [address];
-        if (feeToUse && feeToUse > 0n) {
-          txConfig.value = feeToUse;
+      for (const method of methodsToTry) {
+        // Skip if condition not met
+        if (method.condition === false) continue;
+        
+        try {
+          const txConfig: any = {
+            address: nftAddress as `0x${string}`,
+            abi: ERC721_ABI,
+            functionName: method.func,
+            args: method.args,
+            chainId: base.id,
+          };
+
+          if (method.value && method.value > 0n) {
+            txConfig.value = method.value;
+          }
+
+          // Try to write contract
+          writeContract(txConfig);
+          
+          if (autoDetectMode) {
+            setDetectedMethod(method.label);
+            toast.success(`Using: ${method.label}`);
+          }
+          
+          return; // Success, exit function
+        } catch (err: any) {
+          // Continue to next method if this one fails
+          console.log(`Method ${method.label} failed:`, err);
+          continue;
         }
       }
+      
+      // If all methods failed
+      throw new Error('All mint methods failed. Check contract requirements.');
+    };
 
-      writeContract(txConfig);
+    try {
+      await tryMint();
       
       const feeDisplay = feeToUse && feeToUse > 0n
         ? ` (Fee: ${formatEther(feeToUse)} ETH)`
@@ -372,7 +406,7 @@ export function MintNFTCard() {
             </motion.div>
           )}
 
-          {feeToUse !== undefined && feeToUse > 0n && isValidAddress && (
+          {feeToUse !== undefined && feeToUse > 0n && isValidAddress && !autoDetectMode && (
             <div className="flex items-center gap-2 text-xs text-gray-400 bg-black/20 rounded-lg p-2">
               <input
                 type="checkbox"
@@ -383,6 +417,32 @@ export function MintNFTCard() {
               />
               <label htmlFor="useFeeAsParam" className="cursor-pointer">
                 Gunakan fee sebagai parameter function ({mintFunction}(address, fee)) bukan sebagai value/ETH
+              </label>
+            </div>
+          )}
+          
+          {!autoDetectMode && (
+            <div className="flex items-center gap-4 text-xs text-gray-400 bg-black/20 rounded-lg p-2">
+              <span>Mint Function:</span>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="mintFunction"
+                  checked={mintFunction === 'safeMint'}
+                  onChange={() => setMintFunction('safeMint')}
+                  className="w-3 h-3 text-glow-orange"
+                />
+                <span>safeMint</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="mintFunction"
+                  checked={mintFunction === 'mint'}
+                  onChange={() => setMintFunction('mint')}
+                  className="w-3 h-3 text-glow-orange"
+                />
+                <span>mint</span>
               </label>
             </div>
           )}
