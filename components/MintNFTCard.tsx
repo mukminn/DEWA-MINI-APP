@@ -142,13 +142,25 @@ export function MintNFTCard() {
       
       if (autoDetectMode) {
         if (feeToUse && feeToUse > 0n) {
-          // If fee is provided, try methods with fee first (most likely needed)
-          methodsToTry.push(
-            { func: 'mint', args: [address, feeToUse], value: undefined, label: 'mint(address, fee) with fee param' },
-            { func: 'safeMint', args: [address, feeToUse], value: undefined, label: 'safeMint(address, fee) with fee param' },
-            { func: 'mint', args: [address], value: feeToUse, label: 'mint(address) with ETH value' },
-            { func: 'safeMint', args: [address], value: feeToUse, label: 'safeMint(address) with ETH value' }
-          );
+          // If fee is provided, prioritize methods with fee as parameter (most common for manual fee input)
+          // For manual fee, contract usually expects fee as function parameter, not as ETH value
+          if (useManualFee) {
+            // Manual fee input: prioritize fee as parameter
+            methodsToTry.push(
+              { func: 'mint', args: [address, feeToUse], value: undefined, label: 'mint(address, fee) with fee param' },
+              { func: 'safeMint', args: [address, feeToUse], value: undefined, label: 'safeMint(address, fee) with fee param' },
+              { func: 'mint', args: [address], value: feeToUse, label: 'mint(address) with ETH value' },
+              { func: 'safeMint', args: [address], value: feeToUse, label: 'safeMint(address) with ETH value' }
+            );
+          } else {
+            // Auto-detected fee: try both methods equally
+            methodsToTry.push(
+              { func: 'mint', args: [address, feeToUse], value: undefined, label: 'mint(address, fee) with fee param' },
+              { func: 'safeMint', args: [address, feeToUse], value: undefined, label: 'safeMint(address, fee) with fee param' },
+              { func: 'mint', args: [address], value: feeToUse, label: 'mint(address) with ETH value' },
+              { func: 'safeMint', args: [address], value: feeToUse, label: 'safeMint(address) with ETH value' }
+            );
+          }
         }
         // Also try without fee (in case fee is optional)
         methodsToTry.push(
@@ -159,8 +171,10 @@ export function MintNFTCard() {
         // Manual mode
         if (useFeeAsParam && feeToUse && feeToUse > 0n) {
           methodsToTry.push({ func: mintFunction, args: [address, feeToUse], value: undefined, label: `${mintFunction}(address, fee)` });
-        } else {
+        } else if (feeToUse && feeToUse > 0n) {
           methodsToTry.push({ func: mintFunction, args: [address], value: feeToUse, label: `${mintFunction}(address) with ETH value` });
+        } else {
+          methodsToTry.push({ func: mintFunction, args: [address], value: undefined, label: `${mintFunction}(address) without fee` });
         }
       }
 
@@ -202,7 +216,7 @@ export function MintNFTCard() {
       }
 
       // If no method passed simulation completely, use the first method with fee (if fee provided) or first method
-      if (!simulationWorked || !workingMethod) {
+      if (!simulationWorked) {
         console.warn('Simulation failed for all methods, will try direct execution with most likely method');
         console.log('Simulation errors:', errors);
         
