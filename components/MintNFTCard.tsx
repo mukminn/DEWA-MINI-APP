@@ -9,9 +9,11 @@ import { GlowCard } from './GlowCard';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 
-// Hardcoded contract address and fee for this specific NFT contract
+// Default NFT contract address and fee (permanent configuration)
+// Contract: 0xe2E4CF20d33302CcA9a0483259BF9c08e194455b
+// Fee: 0.00002 ETH (fixed, cannot be changed)
 const NFT_CONTRACT_ADDRESS = '0xe2E4CF20d33302CcA9a0483259BF9c08e194455b' as `0x${string}`;
-const FIXED_MINT_FEE = parseEther('0.00002'); // 0.00002 ETH
+const FIXED_MINT_FEE = parseEther('0.00002'); // Default: 0.00002 ETH
 
 export function MintNFTCard() {
   const { address } = useAccount();
