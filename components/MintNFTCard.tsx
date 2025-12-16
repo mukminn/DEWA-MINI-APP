@@ -202,7 +202,7 @@ export function MintNFTCard() {
       }
 
       // If no method passed simulation completely, use the first method with fee (if fee provided) or first method
-      if (!simulationWorked) {
+      if (!simulationWorked || !workingMethod) {
         console.warn('Simulation failed for all methods, will try direct execution with most likely method');
         console.log('Simulation errors:', errors);
         
@@ -215,6 +215,11 @@ export function MintNFTCard() {
           // Use first method from list
           workingMethod = methodsToTry[0] || { func: 'mint', args: [address], value: undefined, label: 'mint(address) without fee (direct exec)' };
         }
+      }
+
+      // Ensure workingMethod is not null
+      if (!workingMethod) {
+        throw new Error('Unable to determine mint method to use');
       }
 
       // Use the working method - ensure fee is correctly applied
