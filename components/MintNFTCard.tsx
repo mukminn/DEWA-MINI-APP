@@ -191,10 +191,17 @@ export function MintNFTCard() {
         }
       }
 
+      // If no method passed simulation, try direct write with most likely method (fallback)
       if (!workingMethod) {
-        console.error('All methods failed:', errors);
-        const triedMethods = methodsToTry.map(m => m.label).join(', ');
-        throw new Error(`No valid mint method found. Tried: ${triedMethods}. Errors in console. Check contract requirements or try manual mode with different settings.`);
+        console.warn('All methods failed simulation, trying direct write with most likely method');
+        
+        // If fee is provided, try mint(address, fee) first as it's most common for contracts with fee
+        if (feeToUse && feeToUse > 0n) {
+          workingMethod = { func: 'mint', args: [address, feeToUse], value: undefined, label: 'mint(address, fee) with fee param (fallback)' };
+        } else {
+          // Fallback to simple mint without fee
+          workingMethod = { func: 'mint', args: [address], value: undefined, label: 'mint(address) without fee (fallback)' };
+        }
       }
 
       // Use the working method
