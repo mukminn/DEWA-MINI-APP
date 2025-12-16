@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
-import { isAddress, formatEther } from 'viem';
+import { isAddress, formatEther, parseEther } from 'viem';
 import { base } from 'wagmi/chains';
 import { ERC721_ABI } from '@/lib/contracts';
 import { GlowCard } from './GlowCard';
