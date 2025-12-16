@@ -382,7 +382,7 @@ export function MintNFTCard() {
                 className="w-3 h-3 text-glow-orange"
               />
               <label htmlFor="useFeeAsParam" className="cursor-pointer">
-                Gunakan fee sebagai parameter function (safeMint(address, fee)) bukan sebagai value/ETH
+                Gunakan fee sebagai parameter function ({mintFunction}(address, fee)) bukan sebagai value/ETH
               </label>
             </div>
           )}
