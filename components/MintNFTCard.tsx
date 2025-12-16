@@ -331,6 +331,24 @@ export function MintNFTCard() {
           )}
         </div>
 
+        {feeToUse !== undefined && feeToUse > 0n && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-black/60 border border-glow-orange rounded-xl p-3 mt-4"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-300">Fee akan dikirim:</span>
+              <span className="text-base font-bold text-glow-orange">
+                {formatEther(feeToUse)} ETH
+              </span>
+            </div>
+            <div className="text-xs text-gray-500 mt-1">
+              {useManualFee ? '(Manual)' : '(Auto-detected)'}
+            </div>
+          </motion.div>
+        )}
+
         <motion.button
           onClick={handleMint}
           disabled={isPending || isConfirming}
