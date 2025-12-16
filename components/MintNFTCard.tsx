@@ -371,6 +371,21 @@ export function MintNFTCard() {
               </div>
             </motion.div>
           )}
+
+          {feeToUse !== undefined && feeToUse > 0n && isValidAddress && (
+            <div className="flex items-center gap-2 text-xs text-gray-400 bg-black/20 rounded-lg p-2">
+              <input
+                type="checkbox"
+                id="useFeeAsParam"
+                checked={useFeeAsParam}
+                onChange={(e) => setUseFeeAsParam(e.target.checked)}
+                className="w-3 h-3 text-glow-orange"
+              />
+              <label htmlFor="useFeeAsParam" className="cursor-pointer">
+                Gunakan fee sebagai parameter function (safeMint(address, fee)) bukan sebagai value/ETH
+              </label>
+            </div>
+          )}
         </div>
 
         {feeToUse !== undefined && feeToUse > 0n && (
