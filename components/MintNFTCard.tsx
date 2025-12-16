@@ -222,7 +222,11 @@ export function MintNFTCard() {
       if (autoDetectMode) {
         setDetectedMethod(workingMethod.label);
         const feeDisplay = feeToUse && feeToUse > 0n ? ` (Fee: ${formatEther(feeToUse)} ETH)` : '';
-        toast.success(`Using: ${workingMethod.label}${feeDisplay}`);
+        if (workingMethod.label.includes('fallback')) {
+          toast.success(`Using fallback method: ${workingMethod.label}${feeDisplay}`, { duration: 5000 });
+        } else {
+          toast.success(`Using: ${workingMethod.label}${feeDisplay}`);
+        }
       } else {
         const feeDisplay = feeToUse && feeToUse > 0n ? ` (Fee: ${formatEther(feeToUse)} ETH)` : '';
         toast.success(`NFT mint transaction sent!${feeDisplay}`);
