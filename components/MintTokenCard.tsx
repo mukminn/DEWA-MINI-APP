@@ -77,7 +77,6 @@ export function MintTokenCard() {
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0.0"
-              step="0.000000000000000001"
               className="w-full px-4 py-3 bg-black/40 border border-white/20 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-glow-yellow focus:glow-yellow transition-all"
             />
           </div>
