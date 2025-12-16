@@ -62,7 +62,10 @@ export function SendTokenCard() {
         animate={{ opacity: 1, y: 0 }}
         className="h-full flex flex-col"
       >
-        <h2 className="text-2xl font-bold text-glow-blue mb-4">Send Token</h2>
+        <div className="mb-4">
+          <p className="text-xs font-semibold text-glow-blue mb-2 uppercase tracking-wider">BUILD ON BASE</p>
+          <h2 className="text-2xl font-bold text-glow-blue">Send Token</h2>
+        </div>
         
         <div className="space-y-4 flex-1">
           <div>
