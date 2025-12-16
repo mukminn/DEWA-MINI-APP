@@ -125,13 +125,24 @@ export function MintNFTCard() {
           whileHover={{ scale: isPending || isConfirming ? 1 : 1.05 }}
           whileTap={{ scale: isPending || isConfirming ? 1 : 0.95 }}
         >
+          <motion.div
+            className="absolute inset-0 bg-white/20"
+            animate={{
+              x: ['-100%', '100%'],
+            }}
+            transition={{
+              repeat: Infinity,
+              duration: 2,
+              ease: 'linear',
+            }}
+          />
           <AnimatePresence mode="wait">
             {isSuccess ? (
               <motion.span
                 key="success"
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="absolute inset-0 flex items-center justify-center"
+                className="relative z-10 absolute inset-0 flex items-center justify-center"
               >
                 <motion.span
                   animate={{
@@ -150,6 +161,7 @@ export function MintNFTCard() {
                 key="minting"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
+                className="relative z-10"
               >
                 {isPending ? 'Minting...' : isConfirming ? 'Confirming...' : 'Mint NFT'}
               </motion.span>
